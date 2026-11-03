@@ -26,15 +26,17 @@ export const HOME_HTML = `<!doctype html>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&text=dqnamo&display=swap">
 <style>
   :root { color-scheme: light dark; ${GRAY_VARS} background: var(--gray-1); color: var(--gray-12); font: 16px/1.5 "Inter", system-ui, sans-serif; }
+  @property --bg { syntax: "<color>"; inherits: true; initial-value: transparent; }
   body { margin: 0; padding: 0 1.5rem; min-height: 100dvh; }
   .container { width: 100%; max-width: 56rem; margin: 0 auto; padding: 5rem 0; }
   .logo { margin: 0; font-size: 1.0625rem; font-weight: 500; }
   .tagline { margin: 0.125rem 0 0; font-size: 0.9375rem; color: var(--gray-11); }
   .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1.5rem 0 0; }
   /* Buttons are lit from the top like the icons: a light inner edge and glow, darker towards the bottom. */
-  .button { box-sizing: border-box; display: inline-flex; align-items: center; gap: 0.5rem; height: 2.25rem; padding: 0 0.875rem; border: 1px solid var(--gray-7); border-radius: 0.625rem; background: var(--gray-1); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 1px 2px rgb(0 0 0 / 0.06); color: inherit; font-size: 0.875rem; font-weight: 500; text-decoration: none; }
+  .button { box-sizing: border-box; display: inline-flex; align-items: center; gap: 0.5rem; height: 2.25rem; padding: 0 0.875rem; border: 1px solid var(--gray-7); border-radius: 0.625rem; background: var(--gray-1); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 1px 2px rgb(0 0 0 / 0.06); color: inherit; font-size: 0.875rem; font-weight: 500; text-decoration: none; transition: border-color 200ms ease; }
   .button:hover { border-color: var(--gray-8); }
   .button.deploy { --bg: #f38020; border-color: color-mix(in srgb, var(--bg) 75%, #000); background: linear-gradient(color-mix(in srgb, var(--bg) 80%, #fff), var(--bg)); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.35), inset 0 6px 10px -6px rgb(255 255 255 / 0.4), 0 1px 2px rgb(0 0 0 / 0.12), 0 2px 8px color-mix(in srgb, var(--bg) 30%, transparent); color: #fff; text-shadow: 0 1px 0 rgb(0 0 0 / 0.12); }
+  .button.deploy { transition: --bg 200ms ease; }
   .button.deploy:hover { --bg: #e06d10; }
   .features { list-style: none; margin: 2.5rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
   .features .image { position: relative; aspect-ratio: 1; }
@@ -53,7 +55,7 @@ export const HOME_HTML = `<!doctype html>
   .features p { margin: 0.25rem 0 0; font-size: 0.875rem; color: var(--gray-11); }
   .credit { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin: 6rem 0 0; font-size: 0.8125rem; }
   .credit .muted { color: var(--gray-11); }
-  .credit a { display: inline-flex; align-items: center; color: inherit; text-decoration: none; }
+  .credit a { display: inline-flex; align-items: center; color: inherit; text-decoration: none; transition: opacity 200ms ease; }
   .credit a:hover { opacity: 0.7; }
   /* Each studio's own lockup: dqnamo's Pirata One wordmark, Interface's mark beside its name. */
   .credit .dqnamo { font-family: "Pirata One", serif; font-size: 1.625rem; font-weight: 700; line-height: 1; }
