@@ -85,6 +85,12 @@ describe("POST /e", () => {
   });
 });
 
+it("serves the homepage", async () => {
+  const res = await app.request("/", {}, env);
+  expect(res.headers.get("content-type")).toContain("text/html");
+  expect(await res.text()).toContain('<h1 class="logo">seerstack</h1>');
+});
+
 it("serves the tracker script", async () => {
   const res = await app.request("/s.js", {}, env);
   expect(res.headers.get("content-type")).toContain("javascript");
