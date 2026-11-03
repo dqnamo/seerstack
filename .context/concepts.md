@@ -16,7 +16,11 @@ The key on a request decides which project its events belong to.
 **Browser event vs server event**: browser events carry the public key in the body and must come from one of the project's domains (Origin check). Bots are dropped, and the Worker fills in geo, device and a cookieless ID from the request and sets the timestamp itself. Server events carry `Authorization: Bearer <secret key>`, keep their own `timestamp` (for backfills), and get no request-derived geo or device data, because the request comes from the server, not the user.
 
 **Visitor identity**:
-- `anonymous_id`: for browser events, a hash of salt + UTC day + project + IP + user agent. It's stable for a day and unlinkable across days, with no cookies or storage. Multi-day unique-visitor counts are therefore upper bounds.
+- `anonymous_id`: for browser events, either:
+  - `c_…`: a hash of salt + UTC day + project + IP + user agent. It's stable for a day and unlinkable across days, with no cookies or storage. This is the default.
+  - `p_…`: a random ID the tracker keeps in localStorage when the tag has `data-persist`, so a returning browser keeps the same ID across days.
+
+  Multi-day unique counts are exact for `p_` IDs and upper bounds for `c_` IDs.
 - `user_id`: your app's user ID, when known.
 - `distinct_id`: `user_id` if set, else `anonymous_id`. This is the "unique visitor/user" key.
 - **Person** (funnels only): `user_id`, or the `user_id` an `$identify` linked to this `anonymous_id`, or the `anonymous_id`. This lets a funnel start before signup.

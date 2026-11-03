@@ -72,6 +72,8 @@ const filtersArg = z
 function setup(origin: string, project: Project, secretKey?: string) {
   return {
     script_tag: `<script defer src="${origin}/s.js" data-key="${project.public_key}"></script>`,
+    script_tag_note:
+      "Cookieless by default (visitors counted per day). Add data-persist to the tag to recognise returning visitors across days; it keeps a random ID in localStorage, which EU/UK rules treat like a cookie.",
     ...(secretKey && {
       secret_key: secretKey,
       secret_key_note: "Shown only now. Store it as a server secret; rotate_keys replaces it.",

@@ -25,7 +25,8 @@ export const COLUMNS: Column[] = [
   {
     name: "anonymous_id",
     type: "String",
-    description: "Browser visitor ID: a cookieless hash that rotates daily. Servers may set their own.",
+    description:
+      "Browser visitor ID. p_… = random ID kept in the browser (sites with data-persist), stable across days. c_… = cookieless hash that rotates daily. Servers may set their own.",
   },
   {
     name: "properties",
@@ -62,7 +63,7 @@ export const COLUMNS: Column[] = [
 export const NOTES = [
   "One table: events, holding every project. Always filter on project_id and a timestamp range; it's sorted by (project_id, event, timestamp).",
   "ClickHouse SQL, SELECT/WITH only, one statement per call. All times are UTC.",
-  "Unique visitors/users: uniq(distinct_id). Browser anonymous_ids rotate daily, so multi-day unique visitor counts are an upper bound.",
+  "Unique visitors/users: uniq(distinct_id). Multi-day counts are exact for p_ anonymous_ids and an upper bound for c_ ones (they rotate daily). Returning visitors: p_ IDs seen on more than one day.",
   "Sessions aren't stored: a visitor's pageviews more than 30 minutes apart start a new one (see the overview tool, or the sessions example).",
   "$identify events carry both anonymous_id and user_id, which links a visitor's anonymous activity to the user.",
   "Limits: 10 s, 1 GB memory, 10,000 result rows (truncated: true when hit). Aggregate in SQL.",

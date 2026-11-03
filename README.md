@@ -34,6 +34,8 @@ Ask your agent, e.g. _"Create a Seerstack project for saintdex.com"_. It calls `
   window.seerstack?.identify(user.id, { plan: "pro" }); // links today's anonymous visits to the user
   ```
 
+  By default nothing is stored in the browser, so visitors are counted per day. Add `data-persist` to the tag to recognise returning visitors across days: it keeps a random ID in localStorage (browser storage, which EU/UK rules treat like a cookie).
+
   Only the project's domains (and subdomains) can send browser events. To test locally, add `localhost` to the domains and `data-allow-localhost` to the tag. To exclude your own browser, run `localStorage.seerstack_ignore = "1"`.
 
 - **A secret key** (`sk_…`, shown once) for server-side events:

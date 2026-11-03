@@ -18,7 +18,7 @@ flowchart LR
 
 `src/index.ts` exports an `OAuthProvider`. Requests to `/mcp` with a valid token go to `mcpHandler`. The provider itself answers `/token`, `/register` and the `/.well-known/oauth-*` discovery documents. Everything else goes to the Hono app.
 
-- `GET /s.js`: the tracker (`src/tracker.ts`). It sends pageviews on load and on `pushState`/`popstate`, and exposes `window.seerstack.track/identify`. There are no cookies or storage. It reads the public key from `data-key`.
+- `GET /s.js`: the tracker (`src/tracker.ts`). It sends pageviews on load and on `pushState`/`popstate`, and exposes `window.seerstack.track/identify`. It reads the public key from `data-key`. By default it stores nothing; with `data-persist` it keeps a random visitor ID in localStorage and sends it as `anonymous_id` (ADR 0008).
 - `POST /e`: ingest. Takes one event, or `{ batch: [...] }` up to 500.
   - A bearer header means a server event: the key is resolved as a secret key.
   - Otherwise it's a browser event: the public key comes from `key` in the body, and the Origin must match the project's domains.
