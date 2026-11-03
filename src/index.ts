@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { type AuthProps, githubCallback, SCOPE, showConsent, submitConsent } from "./auth";
 import type { Env } from "./env";
+import { HOME_HTML } from "./home";
 import { handleMcp } from "./mcp";
 import { BadRequest, extractEvents, normalizeEvents } from "./normalize";
 import { originAllowed, projectByPublicKey, projectBySecretKey } from "./projects";
@@ -14,7 +15,7 @@ const PUBLIC_URL = "https://seerstack.com";
 
 export const app = new Hono<{ Bindings: Env }>();
 
-app.get("/", (c) => c.text("Seerstack. Events: POST /e. Script: /s.js. Agents: /mcp (OAuth)."));
+app.get("/", (c) => c.html(HOME_HTML));
 app.get("/health", (c) => c.json({ ok: true }));
 
 app.get("/s.js", (c) =>
