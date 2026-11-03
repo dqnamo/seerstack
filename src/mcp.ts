@@ -6,13 +6,14 @@ import { breakdown, DIMENSIONS, funnel, listEvents, overview, projectActivity, t
 import type { Env } from "./env";
 import { QueryError } from "./errors";
 import { defaultInterval, INTERVALS, PERIODS, resolveRange } from "./periods";
-import type { Project } from "./projects";
+import { createProject, getProject, listProjects, type Project, rotateKeys, updateProject } from "./projects";
 import { COLUMNS, EXAMPLES, NOTES } from "./schema-info";
 import { runSql } from "./tinybird";
 
-const INSTRUCTIONS = `Seerstack holds web and product analytics for all of this user's projects. There is no dashboard: answer questions by calling these tools.
+const INSTRUCTIONS = `Seerstack holds web and product analytics for all of this user's projects. There is no dashboard: answer questions and manage projects by calling these tools.
 
 - Start with list_projects to see project IDs and recent activity.
+- To track a new site or app, call create_project with its domains, then give the user the returned script tag (and the secret key for server-side events, which is shown only once).
 - Use overview, timeseries, breakdown, list_events and funnel for common questions. They take a period (default 7d) or date_from/date_to, and exact-match filters.
 - For anything else, call get_schema, then run_sql with ClickHouse SQL against the single events table (always filter on project_id and timestamp).
 - Answer "why" questions by comparing periods and breaking down by referrer_domain, utm_*, path, country, browser, os and device.
@@ -39,11 +40,17 @@ function fail(error: unknown): CallToolResult {
 const run = (fn: () => Promise<unknown>) => fn().then(ok, fail);
 
 const readOnly = { readOnlyHint: true, openWorldHint: false };
+const writes = { readOnlyHint: false, destructiveHint: false, openWorldHint: false };
 
 const projectArg = z
   .string()
   .optional()
   .describe("Project ID from list_projects. Optional when there is only one project.");
+const domainsArg = z
+  .array(z.string())
+  .describe(
+    'Hostnames allowed to send browser events, e.g. ["saintdex.com"]. Subdomains are included; add "localhost" to test locally.',
+  );
 const rangeArgs = {
   period: z
     .enum(PERIODS)
@@ -61,19 +68,34 @@ const filtersArg = z
     `Exact-match filters on ${DIMENSIONS.join(", ")} or properties.<key>, e.g. {"path": "/pricing", "properties.plan": "pro"}. "(none)" matches empty values.`,
   );
 
-export function buildMcpServer(env: Env, projects: Record<string, Project>): McpServer {
+// How to start sending events to a project.
+function setup(origin: string, project: Project, secretKey?: string) {
+  return {
+    script_tag: `<script defer src="${origin}/s.js" data-key="${project.public_key}"></script>`,
+    ...(secretKey && {
+      secret_key: secretKey,
+      secret_key_note: "Shown only now. Store it as a server secret; rotate_keys replaces it.",
+      server_example: `curl -X POST ${origin}/e -H "Authorization: Bearer ${secretKey}" -d '{"event":"signup","user_id":"u_123","properties":{"plan":"pro"}}'`,
+    }),
+    ...(project.domains.length === 0 && {
+      warning: "No domains yet, so browser events are refused. Add them with update_project.",
+    }),
+  };
+}
+
+export function buildMcpServer(env: Env, origin: string): McpServer {
   const server = new McpServer(
-    { name: "seerstack", title: "Seerstack", version: "1.0.0" },
+    { name: "seerstack", title: "Seerstack", version: "1.1.0" },
     { instructions: INSTRUCTIONS },
   );
 
-  const projectId = (id: string | undefined): string => {
-    const ids = Object.keys(projects);
+  const projectId = async (id: string | undefined): Promise<string> => {
+    if (id !== undefined && (await getProject(env.DB, id))) return id;
+    const ids = (await listProjects(env.DB)).map((p) => p.id);
     if (id === undefined && ids.length === 1) return ids[0] as string;
-    if (id !== undefined && Object.hasOwn(projects, id)) return id;
     throw new QueryError(
       id === undefined ? "Pass a project" : `Unknown project "${id}"`,
-      `Projects: ${ids.join(", ")}.`,
+      ids.length > 0 ? `Projects: ${ids.join(", ")}.` : "There are no projects yet. Create one with create_project.",
     );
   };
 
@@ -82,20 +104,77 @@ export function buildMcpServer(env: Env, projects: Record<string, Project>): Mcp
     {
       title: "List projects",
       description:
-        "Every tracked project with its domains and the last 30 days of activity (events, visitors, last event time).",
+        "Every project with its domains, public key and the last 30 days of activity (events, visitors, last event time).",
       inputSchema: {},
       annotations: readOnly,
     },
     () =>
       run(async () => {
-        const activity = await projectActivity(env);
+        const [projects, activity] = await Promise.all([listProjects(env.DB), projectActivity(env)]);
         return {
-          projects: Object.entries(projects).map(([id, p]) => ({
-            id,
+          projects: projects.map((p) => ({
             ...p,
-            ...(activity.get(id) ?? { events_30d: 0, visitors_30d: 0, last_event: null }),
+            ...(activity.get(p.id) ?? { events_30d: 0, visitors_30d: 0, last_event: null }),
           })),
         };
+      }),
+  );
+
+  server.registerTool(
+    "create_project",
+    {
+      title: "Create project",
+      description:
+        "Start tracking a site or app. Returns the project, a script tag with its public key, and a secret key for server-side events (shown only once).",
+      inputSchema: {
+        name: z.string().min(1).max(100).describe("Display name, e.g. Saintdex"),
+        domains: domainsArg.optional(),
+        id: z.string().optional().describe("Project ID used in queries. Default: the name as a slug, e.g. saintdex."),
+      },
+      annotations: writes,
+    },
+    (args) =>
+      run(async () => {
+        const { project, secret_key } = await createProject(env.DB, args);
+        return { project, setup: setup(origin, project, secret_key) };
+      }),
+  );
+
+  server.registerTool(
+    "update_project",
+    {
+      title: "Update project",
+      description: "Rename a project or replace its list of domains. Keys and data are unchanged.",
+      inputSchema: {
+        project: z.string().describe("Project ID"),
+        name: z.string().min(1).max(100).optional(),
+        domains: domainsArg.optional(),
+      },
+      annotations: { ...writes, idempotentHint: true },
+    },
+    (args) =>
+      run(async () => {
+        const project = await updateProject(env.DB, args.project, args);
+        return { project, setup: setup(origin, project) };
+      }),
+  );
+
+  server.registerTool(
+    "rotate_keys",
+    {
+      title: "Rotate keys",
+      description:
+        "Replace a project's public key (the old script tag stops working), secret key (the old one stops working), or both. Old keys can keep working for up to a minute.",
+      inputSchema: {
+        project: z.string().describe("Project ID"),
+        which: z.enum(["public", "secret", "both"]),
+      },
+      annotations: { ...writes, destructiveHint: true },
+    },
+    (args) =>
+      run(async () => {
+        const { project, secret_key } = await rotateKeys(env.DB, args.project, args.which);
+        return { project, setup: setup(origin, project, secret_key) };
       }),
   );
 
@@ -113,7 +192,10 @@ export function buildMcpServer(env: Env, projects: Record<string, Project>): Mcp
       },
       annotations: readOnly,
     },
-    (args) => run(() => overview(env, projectId(args.project), resolveRange(args), args.filters, args.compare ?? true)),
+    (args) =>
+      run(async () =>
+        overview(env, await projectId(args.project), resolveRange(args), args.filters, args.compare ?? true),
+      ),
   );
 
   server.registerTool(
@@ -139,7 +221,7 @@ export function buildMcpServer(env: Env, projects: Record<string, Project>): Mcp
         const range = resolveRange(args);
         return timeseries(
           env,
-          projectId(args.project),
+          await projectId(args.project),
           range,
           args.interval ?? defaultInterval(range),
           args.event ?? "$pageview",
@@ -168,10 +250,10 @@ export function buildMcpServer(env: Env, projects: Record<string, Project>): Mcp
       annotations: readOnly,
     },
     (args) =>
-      run(() =>
+      run(async () =>
         breakdown(
           env,
-          projectId(args.project),
+          await projectId(args.project),
           resolveRange(args),
           args.dimension,
           args.event ?? (args.dimension === "event" ? undefined : "$pageview"),
@@ -191,7 +273,9 @@ export function buildMcpServer(env: Env, projects: Record<string, Project>): Mcp
       annotations: readOnly,
     },
     (args) =>
-      run(() => listEvents(env, projectId(args.project), resolveRange({ ...args, period: args.period ?? "30d" }))),
+      run(async () =>
+        listEvents(env, await projectId(args.project), resolveRange({ ...args, period: args.period ?? "30d" })),
+      ),
   );
 
   server.registerTool(
@@ -219,10 +303,10 @@ export function buildMcpServer(env: Env, projects: Record<string, Project>): Mcp
       annotations: readOnly,
     },
     (args) =>
-      run(() =>
+      run(async () =>
         funnel(
           env,
-          projectId(args.project),
+          await projectId(args.project),
           resolveRange({ ...args, period: args.period ?? "30d" }),
           args.steps,
           (args.window_hours ?? 24) * 3600,
@@ -244,7 +328,7 @@ export function buildMcpServer(env: Env, projects: Record<string, Project>): Mcp
         columns: COLUMNS,
         notes: NOTES,
         examples: EXAMPLES,
-        projects: Object.keys(projects),
+        projects: (await listProjects(env.DB)).map((p) => p.id),
       })),
   );
 
@@ -265,8 +349,8 @@ export function buildMcpServer(env: Env, projects: Record<string, Project>): Mcp
 
 // Stateless Streamable HTTP: a fresh server and transport per request, JSON
 // responses, no sessions to keep.
-export async function handleMcp(env: Env, projects: Record<string, Project>, request: Request): Promise<Response> {
-  const server = buildMcpServer(env, projects);
+export async function handleMcp(env: Env, request: Request): Promise<Response> {
+  const server = buildMcpServer(env, new URL(request.url).origin);
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,

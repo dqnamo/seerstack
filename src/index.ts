@@ -1,18 +1,20 @@
+import { OAuthProvider } from "@cloudflare/workers-oauth-provider";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { secretsEqual } from "./enrich";
+import { type AuthProps, githubCallback, SCOPE, showConsent, submitConsent } from "./auth";
 import type { Env } from "./env";
 import { handleMcp } from "./mcp";
 import { BadRequest, extractEvents, normalizeEvents } from "./normalize";
-import { PROJECTS } from "./projects";
+import { originAllowed, projectByPublicKey, projectBySecretKey } from "./projects";
 import { appendEvents } from "./tinybird";
 import { TRACKER_JS } from "./tracker";
 
 const MAX_BODY_BYTES = 512 * 1024;
+const PUBLIC_URL = "https://seerstack.com";
 
-const app = new Hono<{ Bindings: Env }>();
+export const app = new Hono<{ Bindings: Env }>();
 
-app.get("/", (c) => c.text("Seerstack. Events: POST /e. Script: /s.js. Agents: /mcp."));
+app.get("/", (c) => c.text("Seerstack. Events: POST /e. Script: /s.js. Agents: /mcp (OAuth)."));
 app.get("/health", (c) => c.json({ ok: true }));
 
 app.get("/s.js", (c) =>
@@ -22,7 +24,8 @@ app.get("/s.js", (c) =>
   }),
 );
 
-// Browsers post from your sites; servers post with `Authorization: Bearer <INGEST_KEY>`.
+// Browsers post with the project's public key in the body (and must come from
+// one of its domains); servers post with `Authorization: Bearer <secret key>`.
 app.use(
   "/e",
   cors({
@@ -37,23 +40,31 @@ app.post("/e", async (c) => {
   const text = await c.req.text();
   if (text.length > MAX_BODY_BYTES) return c.json({ error: "Body over 512 KB" }, 413);
 
-  const bearer = c.req.header("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
-  const trusted = bearer !== "" && (await secretsEqual(bearer, c.env.INGEST_KEY));
-  if (bearer && !trusted) return c.json({ error: "Invalid INGEST_KEY" }, 401);
-
+  let body: unknown;
   let events: unknown[];
   try {
-    events = extractEvents(JSON.parse(text));
+    body = JSON.parse(text);
+    events = extractEvents(body);
   } catch (e) {
     return c.json({ error: e instanceof BadRequest ? e.message : "Body must be valid JSON" }, 400);
   }
 
+  const bearer = c.req.header("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  const trusted = bearer !== "";
+  const key = trusted ? bearer : String((body as { key?: unknown }).key ?? "");
+  const project = trusted ? await projectBySecretKey(c.env.DB, key) : await projectByPublicKey(c.env.DB, key);
+  if (!project) return c.json({ error: trusted ? "Invalid secret key" : "Invalid public key" }, 401);
+
+  const origin = c.req.header("origin");
+  if (!trusted && !originAllowed(project, origin)) {
+    return c.json({ error: `Origin ${origin ?? "(none)"} isn't one of ${project.id}'s domains` }, 403);
+  }
+
   const cf = c.req.raw.cf as { country?: string; region?: string; city?: string } | undefined;
   const { rows, rejected, errors } = await normalizeEvents(events, {
-    projects: PROJECTS,
+    projectId: project.id,
     now: Date.now(),
     trusted,
-    origin: c.req.header("origin"),
     ip: c.req.header("cf-connecting-ip") ?? "",
     userAgent: c.req.header("user-agent") ?? "",
     country: cf?.country ?? "",
@@ -78,16 +89,34 @@ app.post("/e", async (c) => {
   return c.json({ accepted: rows.length, rejected, ...(errors.length > 0 && { errors }) }, 202);
 });
 
-app.all("/mcp", async (c) => {
-  // `?token=` is for MCP clients that can't send headers.
-  const token = c.req.header("authorization")?.replace(/^Bearer\s+/i, "") ?? c.req.query("token") ?? "";
-  if (!(await secretsEqual(token, c.env.MCP_TOKEN))) return c.json({ error: "Invalid MCP_TOKEN" }, 401);
-  return handleMcp(c.env, PROJECTS, c.req.raw);
-});
+app.get("/authorize", (c) => showConsent(c.req.raw, c.env));
+app.post("/authorize", (c) => submitConsent(c.req.raw, c.env));
+app.get("/callback", (c) => githubCallback(c.req.raw, c.env));
 
 app.onError((err, c) => {
   console.error(err);
   return c.json({ error: "Internal error" }, 500);
 });
 
-export default app;
+// Requests to /mcp reach here only with a valid access token.
+export const mcpHandler = {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const props = (ctx as ExecutionContext & { props?: AuthProps }).props;
+    // Tokens issued before ALLOWED_GITHUB_USER_ID changed stop working.
+    if (props?.githubId !== env.ALLOWED_GITHUB_USER_ID) return new Response("Forbidden", { status: 403 });
+    return handleMcp(env, request);
+  },
+};
+
+export default new OAuthProvider<Env>({
+  apiRoute: "/mcp",
+  apiHandler: mcpHandler,
+  defaultHandler: { fetch: (request, env, ctx) => app.fetch(request, env, ctx) },
+  authorizeEndpoint: "/authorize",
+  tokenEndpoint: "/token",
+  clientRegistrationEndpoint: "/register",
+  scopesSupported: [SCOPE],
+  requiredScopes: [SCOPE],
+  resourceMetadata: { resource: `${PUBLIC_URL}/mcp` },
+  clientIdMetadataDocumentEnabled: true,
+});

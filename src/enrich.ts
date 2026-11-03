@@ -82,7 +82,7 @@ export function toClickHouseTime(ms: number): string {
   return new Date(ms).toISOString().replace("T", " ").replace("Z", "");
 }
 
-async function sha256Hex(input: string): Promise<string> {
+export async function sha256Hex(input: string): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -98,13 +98,4 @@ export async function cookielessId(
 ): Promise<string> {
   const day = new Date(now).toISOString().slice(0, 10);
   return `c_${(await sha256Hex(`${salt}|${day}|${projectId}|${ip}|${ua}`)).slice(0, 24)}`;
-}
-
-// Constant-time comparison of two secrets (hashed first so lengths match).
-export async function secretsEqual(a: string, b: string): Promise<boolean> {
-  if (!a || !b) return false;
-  const [x, y] = await Promise.all([sha256Hex(a), sha256Hex(b)]);
-  let diff = 0;
-  for (let i = 0; i < x.length; i++) diff |= x.charCodeAt(i) ^ y.charCodeAt(i);
-  return diff === 0;
 }

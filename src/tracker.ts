@@ -1,7 +1,7 @@
 // The browser script served at /s.js. No cookies or storage: the server
 // derives a daily-rotating visitor ID from the request.
 //
-//   <script defer src="https://<worker>/s.js" data-project="my-site"></script>
+//   <script defer src="https://seerstack.com/s.js" data-key="pk_…"></script>
 //   window.seerstack.track("signup", { plan: "pro" });
 //   window.seerstack.identify(user.id, { email: user.email });
 //
@@ -12,14 +12,14 @@
 export const TRACKER_JS = `(function () {
   var script = document.currentScript;
   if (!script || window.seerstack) return;
-  var project = script.getAttribute("data-project");
+  var key = script.getAttribute("data-key");
   var endpoint = new URL("/e", script.src).href;
   var allowLocal = script.hasAttribute("data-allow-localhost");
   var userId = "";
   var lastUrl = "";
 
   function ignored() {
-    if (!project || navigator.webdriver || location.protocol === "file:") return true;
+    if (!key || navigator.webdriver || location.protocol === "file:") return true;
     if (!allowLocal && /^(localhost|127\\.0\\.0\\.1|\\[::1\\])$/.test(location.hostname)) return true;
     try { return localStorage.getItem("seerstack_ignore") === "1"; } catch (e) { return false; }
   }
@@ -27,7 +27,7 @@ export const TRACKER_JS = `(function () {
   function send(event, properties, referrer) {
     if (ignored()) return;
     var body = JSON.stringify({
-      project: project,
+      key: key,
       event: event,
       properties: properties || {},
       url: location.href,

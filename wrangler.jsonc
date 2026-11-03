@@ -3,18 +3,26 @@
   "name": "seerstack",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
-  "compatibility_flags": ["nodejs_compat"],
+  // global_fetch_strictly_public: OAuth clients identified by a metadata URL (CIMD) are fetched safely.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "workers_dev": true,
   "routes": [{ "pattern": "seerstack.com", "custom_domain": true }],
   "observability": { "enabled": true },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "seerstack", "database_id": "8d50e6e8-f1ff-4f9d-9f04-a21c5e8d8f4a" }
+  ],
+  "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "9e85039c7f784d0099e300c4dd45c2e1" }],
   "vars": {
     // Your Tinybird workspace's region. `tb info` shows it.
-    "TINYBIRD_HOST": "https://api.europe-west2.gcp.tinybird.co"
+    "TINYBIRD_HOST": "https://api.europe-west2.gcp.tinybird.co",
+    // The GitHub OAuth App used to sign in on /authorize (callback: https://seerstack.com/callback).
+    "GITHUB_CLIENT_ID": "Ov23li2HBDH0iCb2FJS2",
+    // Only this GitHub account can connect MCP clients (`gh api user --jq .id`).
+    "ALLOWED_GITHUB_USER_ID": "25507937"
   }
   // Secrets (`wrangler secret put <NAME>`):
-  //   TINYBIRD_INGEST_TOKEN  `tb --cloud token copy seerstack_ingest`
-  //   TINYBIRD_READ_TOKEN    `tb --cloud token copy seerstack_read`
-  //   INGEST_KEY             any long random string, for server-side events
-  //   MCP_TOKEN              any long random string, for agents
+  //   TINYBIRD_INGEST_TOKEN  full value of the seerstack_ingest token
+  //   TINYBIRD_READ_TOKEN    full value of the seerstack_read token
   //   ANON_SALT              any long random string, for cookieless visitor IDs
+  //   GITHUB_CLIENT_SECRET   the GitHub OAuth App's client secret
 }

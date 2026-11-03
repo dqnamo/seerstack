@@ -1,6 +1,6 @@
 # 0002 — Projects are defined in code
 
-**Status:** Accepted
+**Status:** Superseded by [0006](./0006-projects-in-d1-managed-over-mcp.md)
 **Date:** 2026-11-02
 
 ## Context

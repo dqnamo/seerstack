@@ -3,6 +3,6 @@ TINYBIRD_HOST=http://localhost:7181
 # `tb token copy seerstack_ingest` / `tb token copy seerstack_read` after `tb build`
 TINYBIRD_INGEST_TOKEN=
 TINYBIRD_READ_TOKEN=
-INGEST_KEY=dev-ingest-key
-MCP_TOKEN=dev-mcp-token
 ANON_SALT=dev-salt
+# Only needed to test the OAuth sign-in locally, with a GitHub OAuth App whose callback is http://localhost:8787/callback
+GITHUB_CLIENT_SECRET=

@@ -1,6 +1,6 @@
 # Seerstack
 
-Personal web and product analytics: one Cloudflare Worker (Hono) that ingests events into Tinybird and serves an MCP server for agents. No UI.
+Personal web and product analytics: one Cloudflare Worker (Hono) at seerstack.com that ingests events into Tinybird and serves an OAuth-protected MCP server where agents create projects and query data. No UI beyond the OAuth consent page.
 
 ## Project context
 
@@ -18,4 +18,5 @@ Open the relevant ADRs and active plans before changing the areas they cover. Af
 - `pnpm dev`: run the Worker locally (needs `.dev.vars`, Tinybird Local and `tb build`)
 - `pnpm test`, `pnpm typecheck`, `pnpm check`
 - `tb build`: apply datafiles to Tinybird Local. `tb --cloud deploy`: apply them to Tinybird Cloud.
+- `pnpm exec wrangler d1 migrations apply seerstack --remote` (or `--local`): apply D1 migrations
 - `pnpm run deploy`: deploy the Worker

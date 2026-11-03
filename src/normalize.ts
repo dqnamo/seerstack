@@ -1,5 +1,4 @@
 import { cookielessId, isBot, parseUrl, parseUserAgent, referrerDomain, toClickHouseTime } from "./enrich";
-import { originAllowed, type Project } from "./projects";
 
 export const MAX_BATCH = 500;
 const MAX_PROPERTIES_BYTES = 32 * 1024;
@@ -36,11 +35,11 @@ export type EventRow = {
 };
 
 export type RequestContext = {
-  projects: Record<string, Project>;
+  /** Resolved from the request's key; every event in it belongs to this project. */
+  projectId: string;
   now: number;
-  /** Sent with INGEST_KEY: a server, so no Origin check and no request-derived geo/device. */
+  /** Sent with the secret key: a server, so no request-derived geo/device or cookieless ID. */
   trusted: boolean;
-  origin: string | undefined;
   ip: string;
   userAgent: string;
   country: string;
@@ -63,13 +62,13 @@ function str(value: unknown, max: number): string {
   return "";
 }
 
-// Accepts one event, or `{ project?, batch: [...] }` where events inherit the
-// top-level project.
+// Accepts one event, or `{ batch: [...] }`. Browser bodies also carry the
+// project's public `key`.
 export function extractEvents(body: unknown): RawEvent[] {
   if (!isRecord(body)) throw new BadRequest("Body must be a JSON object");
   if (Array.isArray(body.batch)) {
     if (body.batch.length > MAX_BATCH) throw new BadRequest(`At most ${MAX_BATCH} events per batch`);
-    return body.batch.map((e) => (isRecord(e) && body.project !== undefined ? { project: body.project, ...e } : e));
+    return body.batch;
   }
   if (typeof body.event === "string") return [body];
   throw new BadRequest("Expected an event with an `event` name, or a `batch` array");
@@ -93,21 +92,11 @@ export async function normalizeEvents(
   const receivedAt = toClickHouseTime(ctx.now);
   const device = ctx.trusted ? { browser: "", os: "", device: "" } : parseUserAgent(ctx.userAgent);
   const geo = ctx.trusted ? { country: "", region: "", city: "" } : ctx;
-  const anonIds = new Map<string, string>();
+  const cookieless = ctx.trusted ? "" : await cookielessId(ctx.salt, ctx.projectId, ctx.ip, ctx.userAgent, ctx.now);
 
   for (const [index, raw] of events.entries()) {
     if (!isRecord(raw)) {
       reject(index, "event must be an object");
-      continue;
-    }
-    const projectId = str(raw.project, 100);
-    const project = Object.hasOwn(ctx.projects, projectId) ? ctx.projects[projectId] : undefined;
-    if (!project) {
-      reject(index, projectId ? `unknown project "${projectId}"` : "missing `project`");
-      continue;
-    }
-    if (!ctx.trusted && !originAllowed(project, ctx.origin)) {
-      reject(index, `origin ${ctx.origin ?? "(none)"} isn't one of ${projectId}'s domains`);
       continue;
     }
     const event = str(raw.event, 200);
@@ -132,20 +121,14 @@ export async function normalizeEvents(
     const ts = ctx.trusted && Number.isFinite(clientMs) ? Math.min(clientMs, ctx.now + MAX_FUTURE_MS) : ctx.now;
 
     const userId = str(raw.user_id, 200);
-    let anonymousId = str(raw.anonymous_id, 200);
-    if (!anonymousId && !ctx.trusted) {
-      if (!anonIds.has(projectId)) {
-        anonIds.set(projectId, await cookielessId(ctx.salt, projectId, ctx.ip, ctx.userAgent, ctx.now));
-      }
-      anonymousId = anonIds.get(projectId) ?? "";
-    }
+    const anonymousId = str(raw.anonymous_id, 200) || cookieless;
 
     const url = str(raw.url, 2000);
     const referrer = str(raw.referrer, 2000);
     const urlParts = parseUrl(url);
 
     rows.push({
-      project_id: projectId,
+      project_id: ctx.projectId,
       event_id: str(raw.event_id, 100) || crypto.randomUUID(),
       timestamp: toClickHouseTime(ts),
       received_at: receivedAt,

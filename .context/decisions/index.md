@@ -1,9 +1,11 @@
 # Decisions
 
-| #                                                 | Decision                                              | Status   | Summary                                                                                     |
-| ------------------------------------------------- | ----------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------- |
-| [0001](./0001-one-worker-personal-tool.md)        | One Worker, built as a personal tool                  | Accepted | A single Hono Worker for ingest, tracker and MCP. No auth, tenants or billing.              |
-| [0002](./0002-projects-in-code.md)                | Projects are defined in code                          | Accepted | A `PROJECTS` map with allowed domains. Redeploy to add a project.                           |
-| [0003](./0003-cookieless-ids-derived-sessions.md) | Cookieless daily visitor IDs; sessions derived in SQL | Accepted | No client storage. A 30-minute gap starts a new session.                                    |
-| [0004](./0004-mcp-tools-as-query-templates.md)    | MCP tools run parameterized Query API templates       | Accepted | SQL is built in TypeScript and values are bound by Tinybird. `run_sql` is the escape hatch. |
-| [0005](./0005-direct-events-api-writes.md)        | Write straight to the Events API, no queue            | Accepted | Browser writes run in waitUntil; server writes are awaited.                                 |
+| #                                                 | Decision                                              | Status             | Summary                                                                                     |
+| ------------------------------------------------- | ----------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------- |
+| [0001](./0001-one-worker-personal-tool.md)        | One Worker, built as a personal tool                  | Accepted           | A single Hono Worker for ingest, tracker and MCP. No tenants or billing.                    |
+| [0002](./0002-projects-in-code.md)                | Projects are defined in code                          | Superseded by 0006 | A `PROJECTS` map with allowed domains. Redeploy to add a project.                           |
+| [0003](./0003-cookieless-ids-derived-sessions.md) | Cookieless daily visitor IDs; sessions derived in SQL | Accepted           | No client storage. A 30-minute gap starts a new session.                                    |
+| [0004](./0004-mcp-tools-as-query-templates.md)    | MCP tools run parameterized Query API templates       | Accepted           | SQL is built in TypeScript and values are bound by Tinybird. `run_sql` is the escape hatch. |
+| [0005](./0005-direct-events-api-writes.md)        | Write straight to the Events API, no queue            | Accepted           | Browser writes run in waitUntil; server writes are awaited.                                 |
+| [0006](./0006-projects-in-d1-managed-over-mcp.md) | Projects and keys live in D1, managed over MCP        | Accepted           | `create_project` returns a public key for the script tag and a secret key for servers.      |
+| [0007](./0007-oauth-with-github-sign-in.md)       | OAuth on /mcp, signing in with GitHub                 | Accepted           | workers-oauth-provider with a consent page; only the owner's GitHub ID gets a token.        |
