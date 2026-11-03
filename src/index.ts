@@ -16,6 +16,12 @@ const PUBLIC_URL = "https://seerstack.com";
 export const app = new Hono<{ Bindings: Env }>();
 
 app.get("/", (c) => c.html(HOME_HTML));
+app.get("/favicon.svg", (c) =>
+  c.body('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8"/></svg>', 200, {
+    "content-type": "image/svg+xml",
+    "cache-control": "public, max-age=86400",
+  }),
+);
 app.get("/health", (c) => c.json({ ok: true }));
 
 app.get("/s.js", (c) =>

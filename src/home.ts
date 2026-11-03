@@ -19,13 +19,14 @@ export const HOME_HTML = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Seerstack</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&text=dqnamo&display=swap">
 <style>
   :root { color-scheme: light dark; ${GRAY_VARS} background: var(--gray-1); color: var(--gray-12); font: 16px/1.5 "Inter", system-ui, sans-serif; }
-  body { margin: 0; padding: 0 1.5rem; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; }
+  body { margin: 0; padding: 0 1.5rem; min-height: 100dvh; }
   .container { width: 100%; max-width: 56rem; margin: 0 auto; padding: 5rem 0; }
   .logo { margin: 0; font-size: 1.0625rem; font-weight: 500; }
   .tagline { margin: 0.25rem 0 0; font-size: 0.9375rem; color: var(--gray-11); }

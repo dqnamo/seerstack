@@ -25,6 +25,7 @@ function page(title: string, body: string, headers = new Headers(), status = 200
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${escapeHtml(title)} · Seerstack</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
   :root { color-scheme: light dark; font: 16px/1.5 system-ui, sans-serif; }
   body { max-width: 30rem; margin: 4rem auto; padding: 0 1rem; }
