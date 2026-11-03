@@ -5,6 +5,7 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
+  "routes": [{ "pattern": "seerstack.com", "custom_domain": true }],
   "observability": { "enabled": true },
   "vars": {
     // Your Tinybird workspace's region. `tb info` shows it.

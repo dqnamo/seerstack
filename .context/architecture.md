@@ -36,4 +36,4 @@ flowchart LR
 - `wrangler.jsonc`: `TINYBIRD_HOST` (the workspace's region).
 - Secrets: `TINYBIRD_INGEST_TOKEN`, `TINYBIRD_READ_TOKEN`, `INGEST_KEY`, `MCP_TOKEN`, `ANON_SALT`.
 - Local dev reads `.dev.vars`, which points at Tinybird Local on `:7181`.
-- Production: Worker `seerstack` at https://seerstack.jp-814.workers.dev, Tinybird workspace `seerstack` (europe-west2). The generated `INGEST_KEY`, `MCP_TOKEN` and `ANON_SALT` are also kept in the gitignored `.env.production`.
+- Production: Worker `seerstack` at https://seerstack.com (custom domain; also https://seerstack.jp-814.workers.dev), Tinybird workspace `seerstack` (europe-west2). The generated `INGEST_KEY`, `MCP_TOKEN` and `ANON_SALT` are also kept in the gitignored `.env.production`.

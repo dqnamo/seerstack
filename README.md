@@ -58,7 +58,7 @@ Ad blockers target well-known analytics paths and domains, so consider a custom 
 **Websites.** Pageviews are tracked automatically, including SPA navigations. There are no cookies.
 
 ```html
-<script defer src="https://seerstack.jp-814.workers.dev/s.js" data-project="my-site"></script>
+<script defer src="https://seerstack.com/s.js" data-project="my-site"></script>
 ```
 
 ```js
@@ -71,7 +71,7 @@ The page's domain must be listed in the project's `domains`. Localhost is ignore
 **Servers.** For any project:
 
 ```bash
-curl -X POST https://seerstack.jp-814.workers.dev/e \
+curl -X POST https://seerstack.com/e \
   -H "Authorization: Bearer $SEERSTACK_INGEST_KEY" \
   -d '{"project":"my-app","event":"purchase","user_id":"u_123","properties":{"plan":"pro","amount":49}}'
 ```
@@ -81,7 +81,7 @@ Send up to 500 events at once with `{"project":"my-app","batch":[...]}`. Server 
 ## Connecting agents
 
 ```bash
-claude mcp add --transport http seerstack https://seerstack.jp-814.workers.dev/mcp --header "Authorization: Bearer $SEERSTACK_MCP_TOKEN"
+claude mcp add --transport http seerstack https://seerstack.com/mcp --header "Authorization: Bearer $SEERSTACK_MCP_TOKEN"
 ```
 
 For clients that can't send headers, use `https://…/mcp?token=<MCP_TOKEN>`. Treat that URL as a secret.
