@@ -30,7 +30,7 @@ export const HOME_HTML = `<!doctype html>
   body { margin: 0; padding: 0 1.5rem; min-height: 100dvh; }
   .container { width: 100%; max-width: 56rem; margin: 0 auto; padding: 5rem 0; }
   .logo { margin: 0; font: 700 1.0625rem/1.5 "JetBrains Mono", ui-monospace, monospace; text-transform: uppercase; }
-  .tagline { margin: 0.25rem 0 0; font-size: 0.9375rem; color: var(--gray-11); }
+  .tagline { margin: 0.125rem 0 0; font-size: 0.9375rem; color: var(--gray-11); }
   .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1.5rem 0 0; }
   /* Buttons are lit from the top like the icons: a light inner edge and glow, darker towards the bottom. */
   .button { box-sizing: border-box; display: inline-flex; align-items: center; gap: 0.5rem; height: 2.25rem; padding: 0 0.875rem; border: 1px solid var(--gray-7); border-radius: 0.625rem; background: var(--gray-1); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12), 0 1px 2px rgb(0 0 0 / 0.06); color: inherit; font-size: 0.875rem; font-weight: 500; text-decoration: none; }
