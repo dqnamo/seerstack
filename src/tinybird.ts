@@ -12,9 +12,10 @@ export type TinybirdJson<T> = {
   statistics?: { elapsed: number; rows_read: number; bytes_read: number };
 };
 
-// Appends rows through the Events API (NDJSON).
-export async function appendEvents(env: TinybirdEnv, rows: EventRow[]): Promise<void> {
-  const res = await fetch(`${env.TINYBIRD_HOST}/v0/events?name=events`, {
+// Appends rows through the Events API (NDJSON). With `wait`, Tinybird answers
+// only once the rows are written, so they can be read back straight away.
+export async function appendEvents(env: TinybirdEnv, rows: EventRow[], opts: { wait?: boolean } = {}): Promise<void> {
+  const res = await fetch(`${env.TINYBIRD_HOST}/v0/events?name=events${opts.wait ? "&wait=true" : ""}`, {
     method: "POST",
     headers: { Authorization: `Bearer ${env.TINYBIRD_INGEST_TOKEN}` },
     body: rows.map((row) => JSON.stringify(row)).join("\n"),

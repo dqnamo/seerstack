@@ -16,7 +16,7 @@ const MAX_BUCKETS = 2_000;
 const startOfDay = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 const daysAgo = (today: Date, n: number) => new Date(today.getTime() - n * DAY);
 
-function parseDay(value: string, name: string): Date {
+export function parseDay(value: string, name: string): Date {
   const ms = /^\d{4}-\d{2}-\d{2}$/.test(value) ? Date.parse(`${value}T00:00:00Z`) : Number.NaN;
   if (!Number.isFinite(ms)) throw new QueryError(`${name} must be a date like 2026-11-02`);
   return new Date(ms);

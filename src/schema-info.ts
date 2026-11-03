@@ -47,9 +47,13 @@ export const COLUMNS: Column[] = [
   { name: "utm_campaign", type: "LowCardinality(String)", description: "utm_campaign" },
   { name: "utm_term", type: "String", description: "utm_term" },
   { name: "utm_content", type: "String", description: "utm_content" },
-  { name: "country", type: "LowCardinality(String)", description: "ISO 3166-1 alpha-2 code (browser events only)" },
-  { name: "region", type: "String", description: "Region/state name (browser events only)" },
-  { name: "city", type: "String", description: "City name (browser events only)" },
+  {
+    name: "country",
+    type: "LowCardinality(String)",
+    description: "ISO 3166-1 alpha-2 code (browser events and imports)",
+  },
+  { name: "region", type: "String", description: "Region/state name (browser events and imports)" },
+  { name: "city", type: "String", description: "City name (browser events and imports)" },
   {
     name: "browser",
     type: "LowCardinality(String)",
@@ -57,7 +61,11 @@ export const COLUMNS: Column[] = [
   },
   { name: "os", type: "LowCardinality(String)", description: "macOS, Windows, iOS, Android, Linux, ChromeOS, Other" },
   { name: "device", type: "LowCardinality(String)", description: "desktop, mobile, tablet" },
-  { name: "lib", type: "LowCardinality(String)", description: "Sender: seerstack-web, server, or what the caller set" },
+  {
+    name: "lib",
+    type: "LowCardinality(String)",
+    description: "Sender: seerstack-web, server, posthog (imported history), or what the caller set",
+  },
 ];
 
 export const NOTES = [
