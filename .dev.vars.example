@@ -1,0 +1,8 @@
+# Copy to .dev.vars for `pnpm dev`. These point at Tinybird Local (`tb local start`).
+TINYBIRD_HOST=http://localhost:7181
+# `tb token copy seerstack_ingest` / `tb token copy seerstack_read` after `tb build`
+TINYBIRD_INGEST_TOKEN=
+TINYBIRD_READ_TOKEN=
+INGEST_KEY=dev-ingest-key
+MCP_TOKEN=dev-mcp-token
+ANON_SALT=dev-salt

@@ -1,0 +1,38 @@
+DESCRIPTION >
+    One row per event from every project. Pageviews are `$pageview`, identify
+    calls are `$identify`, everything else is a product event.
+
+TOKEN seerstack_ingest APPEND
+TOKEN seerstack_read READ
+
+SCHEMA >
+    `project_id` LowCardinality(String) `json:$.project_id`,
+    `event_id` String `json:$.event_id`,
+    `timestamp` DateTime64(3, 'UTC') `json:$.timestamp`,
+    `received_at` DateTime64(3, 'UTC') `json:$.received_at`,
+    `event` LowCardinality(String) `json:$.event`,
+    `distinct_id` String `json:$.distinct_id` DEFAULT '',
+    `user_id` String `json:$.user_id` DEFAULT '',
+    `anonymous_id` String `json:$.anonymous_id` DEFAULT '',
+    `properties` String `json:$.properties` DEFAULT '{}',
+    `url` String `json:$.url` DEFAULT '',
+    `host` LowCardinality(String) `json:$.host` DEFAULT '',
+    `path` String `json:$.path` DEFAULT '',
+    `referrer` String `json:$.referrer` DEFAULT '',
+    `referrer_domain` LowCardinality(String) `json:$.referrer_domain` DEFAULT '',
+    `utm_source` LowCardinality(String) `json:$.utm_source` DEFAULT '',
+    `utm_medium` LowCardinality(String) `json:$.utm_medium` DEFAULT '',
+    `utm_campaign` LowCardinality(String) `json:$.utm_campaign` DEFAULT '',
+    `utm_term` String `json:$.utm_term` DEFAULT '',
+    `utm_content` String `json:$.utm_content` DEFAULT '',
+    `country` LowCardinality(String) `json:$.country` DEFAULT '',
+    `region` String `json:$.region` DEFAULT '',
+    `city` String `json:$.city` DEFAULT '',
+    `browser` LowCardinality(String) `json:$.browser` DEFAULT '',
+    `os` LowCardinality(String) `json:$.os` DEFAULT '',
+    `device` LowCardinality(String) `json:$.device` DEFAULT '',
+    `lib` LowCardinality(String) `json:$.lib` DEFAULT ''
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
+ENGINE_SORTING_KEY "project_id, event, timestamp"

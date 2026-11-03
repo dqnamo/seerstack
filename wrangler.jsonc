@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "seerstack",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "vars": {
+    // Your Tinybird workspace's region. `tb info` shows it.
+    "TINYBIRD_HOST": "https://api.europe-west2.gcp.tinybird.co"
+  }
+  // Secrets (`wrangler secret put <NAME>`):
+  //   TINYBIRD_INGEST_TOKEN  `tb --cloud token copy seerstack_ingest`
+  //   TINYBIRD_READ_TOKEN    `tb --cloud token copy seerstack_read`
+  //   INGEST_KEY             any long random string, for server-side events
+  //   MCP_TOKEN              any long random string, for agents
+  //   ANON_SALT              any long random string, for cookieless visitor IDs
+}
