@@ -20,6 +20,7 @@ beforeEach(() => {
   clearKeyCache();
   env = {
     DB: fakeD1(),
+    IMPORTS: {} as Env["IMPORTS"],
     OAUTH_KV: {} as KVNamespace,
     OAUTH_PROVIDER: {} as OAuthHelpers,
     TINYBIRD_HOST: "https://tinybird.test",

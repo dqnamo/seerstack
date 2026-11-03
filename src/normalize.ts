@@ -1,7 +1,7 @@
 import { cookielessId, isBot, parseUrl, parseUserAgent, referrerDomain, toClickHouseTime } from "./enrich";
 
 export const MAX_BATCH = 500;
-const MAX_PROPERTIES_BYTES = 32 * 1024;
+export const MAX_PROPERTIES_BYTES = 32 * 1024;
 const MAX_FUTURE_MS = 60 * 60 * 1000;
 const MAX_ERRORS = 10;
 

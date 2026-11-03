@@ -1,6 +1,6 @@
 # Architecture
 
-One Cloudflare Worker (Hono) at https://seerstack.com. Projects live in D1, OAuth state in KV, and events in one Tinybird datasource. The only UI is the OAuth consent page.
+One Cloudflare Worker (Hono) at https://seerstack.com. Projects and imports live in D1, OAuth state in KV, and events in one Tinybird datasource. A Workflow imports history from PostHog in the background. The only UI is the OAuth consent page.
 
 ```mermaid
 flowchart LR
@@ -12,6 +12,10 @@ flowchart LR
   worker -- "Events API<br/>seerstack_ingest (APPEND)" --> tb[("Tinybird<br/>events")]
   worker -- "Query API /v0/sql<br/>seerstack_read (READ)" --> tb
   worker -. "sign-in" .-> gh["GitHub OAuth"]
+  worker -- "import_posthog starts" --> wf["PosthogImport<br/>Workflow"]
+  wf -- "HogQL query API" --> ph["PostHog"]
+  wf -- "Events API (wait=true)" --> tb
+  wf -- "progress" --> d1
 ```
 
 ## Routes
@@ -41,6 +45,10 @@ flowchart LR
 - `run_sql` runs agent-written SQL. `src/sql-guard.ts` checks it (single SELECT/WITH, no SETTINGS/FORMAT/INTO/system tables/external table functions), then wraps it with caps of 10,000 rows, 10 s and 1 GB.
 - Both use the `seerstack_read` token, which can only read `events`.
 
+## Imports
+
+`import_posthog` (`src/imports.ts`) checks the PostHog key and range, counts the events, inserts a row in the D1 `imports` table and starts the `PosthogImport` Workflow (`src/import-workflow.ts`) with the import's ID as the instance ID. The API key goes into the Workflow params sealed (`src/seal.ts`). Each Workflow step reads one page from PostHog (`src/posthog.ts`), maps it to event rows, skips rows Tinybird already has for that time range, appends the rest with `wait=true`, and writes the totals and position to D1. Rate limits become `step.sleep`; auth and query errors end the import as failed. `list_imports` reads D1 and marks imports failed if their Workflow died without reporting; `cancel_import` terminates the instance. See ADR 0009.
+
 ## Tinybird
 
 - Datafiles: `tinybird/datasources/events.datasource` (Forward CLI, `tinybird.config.json` at the repo root).
@@ -50,7 +58,7 @@ flowchart LR
 ## Config
 
 - `wrangler.jsonc`:
-  - Bindings: `DB` (D1 `seerstack`) and `OAUTH_KV`.
+  - Bindings: `DB` (D1 `seerstack`), `OAUTH_KV`, and `IMPORTS` (the `seerstack-posthog-import` Workflow, class `PosthogImport`, exported from `src/index.ts`).
   - Vars: `TINYBIRD_HOST`, `GITHUB_CLIENT_ID`, `ALLOWED_GITHUB_USER_ID`.
   - Custom domain: `seerstack.com`.
 - Secrets: `TINYBIRD_INGEST_TOKEN`, `TINYBIRD_READ_TOKEN`, `ANON_SALT`, `GITHUB_CLIENT_SECRET`.

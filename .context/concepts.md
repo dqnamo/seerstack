@@ -15,6 +15,10 @@ The key on a request decides which project its events belong to.
 
 **Browser event vs server event**: browser events carry the public key in the body and must come from one of the project's domains (Origin check). Bots are dropped, and the Worker fills in geo, device and a cookieless ID from the request and sets the timestamp itself. Server events carry `Authorization: Bearer <secret key>`, keep their own `timestamp` (for backfills), and get no request-derived geo or device data, because the request comes from the server, not the user.
 
+**Imported event**: a row copied from PostHog by `import_posthog`, with `lib = 'posthog'` and PostHog's UUID as `event_id`. It's shaped as if the tracker had recorded it: the same visitor ID scheme (`c_` per day, or `p_` for `data-persist` sites, hashed from PostHog's device ID), referrers credited the same way, geo and device filled in, bots and PostHog's automatic events left out. Imports stop where the project's own pageviews begin.
+
+**Import**: one run of the PostHog import Workflow, tracked in D1's `imports` table: running, completed, failed or cancelled, with an estimate, totals and the position it has read up to. A new import of the same PostHog project carries on from the furthest position.
+
 **Visitor identity**:
 - `anonymous_id`: for browser events, either:
   - `c_…`: a hash of salt + UTC day + project + IP + user agent. It's stable for a day and unlinkable across days, with no cookies or storage. This is the default.

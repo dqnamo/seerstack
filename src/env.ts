@@ -1,8 +1,11 @@
 import type { OAuthHelpers } from "@cloudflare/workers-oauth-provider";
+import type { ImportParams } from "./imports";
 
 export type Env = {
-  /** Projects and their keys. */
+  /** Projects and their keys, and imports. */
   DB: D1Database;
+  /** The PostHog import Workflow (src/import-workflow.ts). */
+  IMPORTS: Workflow<ImportParams>;
   /** OAuth clients, grants and tokens (workers-oauth-provider). */
   OAUTH_KV: KVNamespace;
   /** Injected by OAuthProvider into the default handler. */

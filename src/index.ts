@@ -9,6 +9,9 @@ import { originAllowed, projectByPublicKey, projectBySecretKey } from "./project
 import { appendEvents } from "./tinybird";
 import { TRACKER_JS } from "./tracker";
 
+// Workflow classes must be exported from the main module.
+export { PosthogImport } from "./import-workflow";
+
 const MAX_BODY_BYTES = 512 * 1024;
 const PUBLIC_URL = "https://seerstack.com";
 

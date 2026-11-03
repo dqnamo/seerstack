@@ -12,6 +12,8 @@
     { "binding": "DB", "database_name": "seerstack", "database_id": "8d50e6e8-f1ff-4f9d-9f04-a21c5e8d8f4a" }
   ],
   "kv_namespaces": [{ "binding": "OAUTH_KV", "id": "9e85039c7f784d0099e300c4dd45c2e1" }],
+  // Imports of past events from PostHog run in the background (src/import-workflow.ts).
+  "workflows": [{ "name": "seerstack-posthog-import", "binding": "IMPORTS", "class_name": "PosthogImport" }],
   "vars": {
     // Your Tinybird workspace's region. `tb info` shows it.
     "TINYBIRD_HOST": "https://api.europe-west2.gcp.tinybird.co",
