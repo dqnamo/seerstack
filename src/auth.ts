@@ -5,6 +5,7 @@ import {
   type ConsentDescription,
 } from "@cloudflare/workers-oauth-provider";
 import type { Env } from "./env";
+import { BASE_CSS, HEAD } from "./styles";
 
 // The OAuth sign-in for MCP clients. /authorize shows a consent page (who is
 // asking, where the token goes); Allow sends you to GitHub, and /callback
@@ -22,17 +23,27 @@ const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => `&#${c
 function page(title: string, body: string, headers = new Headers(), status = 200): Response {
   headers.set("Content-Type", "text/html; charset=utf-8");
   const html = `<!doctype html>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="en">
+${HEAD}
 <title>${escapeHtml(title)} · Seerstack</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<style>
-  :root { color-scheme: light dark; font: 16px/1.5 system-ui, sans-serif; }
-  body { max-width: 30rem; margin: 4rem auto; padding: 0 1rem; }
-  button { font: inherit; padding: 0.5rem 1rem; margin-right: 0.5rem; cursor: pointer; }
-  .warn { padding: 0.75rem; border: 1px solid #c90; border-radius: 6px; }
+<style>${BASE_CSS}
+  .container { width: 100%; max-width: 30rem; margin: 0 auto; padding: 5rem 0; }
+  .logo a { color: var(--gray-12); text-decoration: none; transition: opacity 200ms ease; }
+  .logo a:hover { opacity: 0.7; }
+  h1 { margin: 2.5rem 0 0; font-size: 1.25rem; font-weight: 500; line-height: 1.35; letter-spacing: -0.01em; text-wrap: balance; }
+  p { margin: 0.75rem 0 0; font-size: 0.9375rem; color: var(--gray-11); }
+  strong { font-weight: 500; color: var(--gray-12); }
+  .warn { margin-top: 1.25rem; padding: 0.75rem 0.875rem; border: 1px solid var(--amber-7); border-radius: 0.625rem; background: var(--amber-2); color: var(--amber-11); }
+  .warn strong { color: var(--amber-12); }
+  .note { margin-top: 1rem; font-size: 0.8125rem; }
+  .button.allow { --bg: var(--gray-12); color: var(--gray-1); }
+  .button.allow:hover { --bg: var(--gray-11); }
 </style>
-${body}`;
+<div class="container">
+  <p class="logo"><a href="/">seerstack</a></p>
+${body}
+</div>
+`;
   return new Response(html, { status, headers });
 }
 
@@ -47,12 +58,12 @@ function consentPage(details: ConsentDescription, handle: string): string {
   return `<h1>Allow ${name} to read and manage your Seerstack analytics?</h1>
 <p>${origin} Access will be sent to <strong>${escapeHtml(details.redirectHost)}</strong>.</p>
 ${local}
-<p>You'll sign in with GitHub next.</p>
-<form method="post">
+<form method="post" class="actions">
   <input type="hidden" name="handle" value="${escapeHtml(handle)}">
-  <button name="decision" value="approve">Allow</button>
-  <button name="decision" value="deny">Deny</button>
-</form>`;
+  <button class="button solid allow" name="decision" value="approve">Allow</button>
+  <button class="button" name="decision" value="deny">Deny</button>
+</form>
+<p class="note">You'll sign in with GitHub next.</p>`;
 }
 
 // Redirect back to the client only when the library has validated where to;

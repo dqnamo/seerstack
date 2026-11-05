@@ -18,7 +18,7 @@ flowchart LR
 
 `src/index.ts` exports an `OAuthProvider`. Requests to `/mcp` with a valid token go to `mcpHandler`. The provider itself answers `/token`, `/register` and the `/.well-known/oauth-*` discovery documents. Everything else goes to the Hono app.
 
-- `GET /`: the homepage (`src/home.ts`), one static HTML string with inline CSS and no JavaScript. Grays come from `@radix-ui/colors` (light and dark via `light-dark()`); brand logos are inline SVGs in `src/logos.ts`. Fonts load from Google Fonts.
+- `GET /`: the homepage (`src/home.ts`), one static HTML string with inline CSS and no JavaScript. Grays come from `@radix-ui/colors` (light and dark via `light-dark()`); brand logos are inline SVGs in `src/logos.ts`. Fonts load from Google Fonts. The base styles (fonts, grays, wordmark, buttons) live in `src/styles.ts` and are shared with the OAuth pages in `src/auth.ts`.
 - `GET /s.js`: the tracker (`src/tracker.ts`). It sends pageviews on load and on `pushState`/`popstate`, and exposes `window.seerstack.track/identify`. It reads the public key from `data-key`. By default it stores nothing; with `data-persist` it keeps a random visitor ID in localStorage and sends it as `anonymous_id` (ADR 0008).
 - `POST /e`: ingest. Takes one event, or `{ batch: [...] }` up to 500.
   - A bearer header means a server event: the key is resolved as a secret key.
