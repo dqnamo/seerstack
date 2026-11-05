@@ -88,7 +88,14 @@ describe("POST /e", () => {
 it("serves the homepage", async () => {
   const res = await app.request("/", {}, env);
   expect(res.headers.get("content-type")).toContain("text/html");
-  expect(await res.text()).toContain('<h1 class="logo">seerstack</h1>');
+  const html = await res.text();
+  expect(html).toContain('<h1 class="logo">seerstack</h1>');
+  expect(html).not.toContain("<script");
+});
+
+it("tracks the homepage with HOMEPAGE_KEY", async () => {
+  const res = await app.request("/", {}, { ...env, HOMEPAGE_KEY: "pk_home" });
+  expect(await res.text()).toContain('<script defer src="/s.js" data-key="pk_home"></script>');
 });
 
 it("serves the tracker script", async () => {

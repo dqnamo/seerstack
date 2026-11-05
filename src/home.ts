@@ -14,7 +14,9 @@ const GRAY_VARS = Array.from({ length: 12 }, (_, i) => {
 const appIcon = (name: string, label: string, svg: string) =>
   `<span class="icon ${name}" role="img" aria-label="${label}" title="${label}">${svg}</span>`;
 
-export const HOME_HTML = `<!doctype html>
+// trackerKey is the public key of the Seerstack project that tracks this page
+// (HOMEPAGE_KEY). Without one, the page has no script at all.
+export const homeHtml = (trackerKey = "") => `<!doctype html>
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -24,7 +26,7 @@ export const HOME_HTML = `<!doctype html>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&text=dqnamo&display=swap">
-<style>
+${trackerKey ? `<script defer src="/s.js" data-key="${trackerKey}"></script>\n` : ""}<style>
   :root { color-scheme: light dark; ${GRAY_VARS} background: var(--gray-1); color: var(--gray-12); font: 16px/1.5 "Inter", system-ui, sans-serif; }
   @property --bg { syntax: "<color>"; inherits: true; initial-value: transparent; }
   body { margin: 0; padding: 0 1.5rem; min-height: 100dvh; }
