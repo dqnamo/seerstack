@@ -1,6 +1,6 @@
 # Seerstack
 
-Personal web and product analytics: one Cloudflare Worker (Hono) at seerstack.com that ingests events into Tinybird and serves an OAuth-protected MCP server where agents create projects and query data. No UI beyond the OAuth consent page.
+Personal web and product analytics: one Cloudflare Worker (Hono) at seerstack.com that ingests events into Tinybird and serves an OAuth-protected MCP server where agents create projects and query data. No UI beyond the OAuth consent page and the owner-only PostHog import page.
 
 ## Project context
 

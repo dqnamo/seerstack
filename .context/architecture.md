@@ -1,6 +1,6 @@
 # Architecture
 
-One Cloudflare Worker (Hono) at https://seerstack.com. Projects and imports live in D1, OAuth state in KV, and events in one Tinybird datasource. A Workflow imports history from PostHog in the background. The only UI is the OAuth consent page.
+One Cloudflare Worker (Hono) at https://seerstack.com. Projects and imports live in D1, OAuth state in KV, and events in one Tinybird datasource. A Workflow imports history from PostHog in the background. The only UI is the OAuth consent page and the owner's PostHog import page.
 
 ```mermaid
 flowchart LR
@@ -12,7 +12,8 @@ flowchart LR
   worker -- "Events API<br/>seerstack_ingest (APPEND)" --> tb[("Tinybird<br/>events")]
   worker -- "Query API /v0/sql<br/>seerstack_read (READ)" --> tb
   worker -. "sign-in" .-> gh["GitHub OAuth"]
-  worker -- "import_posthog starts" --> wf["PosthogImport<br/>Workflow"]
+  owner["Owner's browser<br/>(/import)"] -- "GitHub sign-in, PostHog key" --> worker
+  worker -- "starts" --> wf["PosthogImport<br/>Workflow"]
   wf -- "HogQL query API" --> ph["PostHog"]
   wf -- "Events API (wait=true)" --> tb
   wf -- "progress" --> d1
@@ -33,6 +34,7 @@ flowchart LR
   2. Allow redirects to GitHub with PKCE.
   3. The callback completes only for `ALLOWED_GITHUB_USER_ID`.
   - The library's `beginConsent`/`approveConsent`/`beginUpstream`/`finishUpstream` bind each step to the browser.
+- `GET/POST /import`, `GET /import/:id`, `POST /import/:id/cancel` and `GET /callback/import`: the owner's PostHog import page and its GitHub sign-in (`src/import-page.ts`, `src/sign-in.ts`). See Imports below.
 - `/mcp`: a stateless Streamable HTTP MCP server (`src/mcp.ts`), with a fresh server per request. `mcpHandler` re-checks the GitHub ID in the token's props.
 
 ## Projects
@@ -47,7 +49,7 @@ flowchart LR
 
 ## Imports
 
-`import_posthog` (`src/imports.ts`) checks the PostHog key and range, counts the events, inserts a row in the D1 `imports` table and starts the `PosthogImport` Workflow (`src/import-workflow.ts`) with the import's ID as the instance ID. The API key goes into the Workflow params sealed (`src/seal.ts`). Each Workflow step reads one page from PostHog (`src/posthog.ts`), maps it to event rows, skips rows Tinybird already has for that time range, appends the rest with `wait=true`, and writes the totals and position to D1. Rate limits become `step.sleep`; auth and query errors end the import as failed. `list_imports` reads D1 and marks imports failed if their Workflow died without reporting; `cancel_import` terminates the instance. See ADR 0009.
+The owner starts an import on `/import` (`src/import-page.ts`): it signs them in with GitHub (`src/sign-in.ts`: the same GitHub OAuth App, returning to `/callback/import`, then a signed 12-hour session cookie scoped to `/import`, with a CSRF token in its forms) and takes the project and PostHog key, so the key never passes through an agent. The MCP tool `import_posthog` only returns a link to it. `startPosthogImport` (`src/imports.ts`) checks the PostHog key and range, counts the events, inserts a row in the D1 `imports` table and starts the `PosthogImport` Workflow (`src/import-workflow.ts`) with the import's ID as the instance ID, kept for a day after it finishes. The API key goes into the Workflow params sealed (`src/seal.ts`). `/import/:id` shows progress, refreshing until it's done, and can cancel. Each Workflow step reads one page from PostHog (`src/posthog.ts`), maps it to event rows, skips rows Tinybird already has for that time range, appends the rest with `wait=true`, and writes the totals and position to D1. Rate limits become `step.sleep`; auth and query errors end the import as failed. `list_imports` reads D1 and marks imports failed if their Workflow died without reporting; `cancel_import` terminates the instance. See ADR 0009.
 
 ## Tinybird
 

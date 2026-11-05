@@ -17,9 +17,9 @@ export const SCOPE = "seerstack";
 /** What every MCP request sees as ctx.props. */
 export type AuthProps = { githubId: string; login: string };
 
-const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
+export const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 
-function page(title: string, body: string, headers = new Headers(), status = 200): Response {
+export function page(title: string, body: string, headers = new Headers(), status = 200): Response {
   headers.set("Content-Type", "text/html; charset=utf-8");
   const html = `<!doctype html>
 <meta charset="utf-8">
@@ -30,6 +30,13 @@ function page(title: string, body: string, headers = new Headers(), status = 200
   body { max-width: 30rem; margin: 4rem auto; padding: 0 1rem; }
   button { font: inherit; padding: 0.5rem 1rem; margin-right: 0.5rem; cursor: pointer; }
   .warn { padding: 0.75rem; border: 1px solid #c90; border-radius: 6px; }
+  label { display: block; margin-top: 1rem; font-weight: 600; }
+  input, select { font: inherit; font-weight: normal; width: 100%; box-sizing: border-box; padding: 0.4rem; margin-top: 0.25rem; }
+  .hint { display: block; font-size: 0.875rem; opacity: 0.75; margin-top: 0.25rem; font-weight: normal; }
+  details { margin-top: 1rem; }
+  progress { width: 100%; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  td, th { text-align: left; padding: 0.25rem 0.5rem 0.25rem 0; }
 </style>
 ${body}`;
   return new Response(html, { status, headers });
@@ -65,14 +72,14 @@ function authError(error: unknown): Response {
   throw error;
 }
 
-function base64Url(bytes: Uint8Array): string {
+export function base64Url(bytes: Uint8Array): string {
   return btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
 }
 
-async function pkceChallenge(verifier: string): Promise<string> {
+export async function pkceChallenge(verifier: string): Promise<string> {
   return base64Url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))));
 }
 
@@ -121,7 +128,7 @@ export async function submitConsent(req: Request, env: Env): Promise<Response> {
   }
 }
 
-async function githubUser(env: Env, code: string, verifier: string, redirectUri: string) {
+export async function githubUser(env: Env, code: string, verifier: string, redirectUri: string) {
   const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
     headers: { Accept: "application/json", "Content-Type": "application/json" },

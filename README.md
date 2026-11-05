@@ -61,18 +61,18 @@ Ask your agent, e.g. _"Create a Seerstack project for saintdex.com"_. It calls `
 | `list_events`                       | Which events a project sends, and their property keys                                         |
 | `funnel`                            | Step-by-step conversion, linking anonymous visits to signups                                  |
 | `get_schema` / `run_sql`            | Anything else, in read-only ClickHouse SQL                                                    |
-| `import_posthog`                    | Bring over a project's history from PostHog, in the background                                |
+| `import_posthog`                    | A link to the import page, to bring over a project's history from PostHog                     |
 | `list_imports` / `cancel_import`    | Follow an import's progress, or stop it                                                       |
 
 ## Moving from PostHog
 
-Ask your agent, e.g. _"Import dqnamo's history from PostHog project 479710"_, with a PostHog personal API key that has the **Query Read** scope (PostHog → Settings → Personal API keys). `import_posthog` checks the key, says how many events it will bring over, and returns; a Workflow does the rest and `list_imports` shows how far it's got.
+Open https://seerstack.com/import (or ask your agent, which gets the link from `import_posthog`) and sign in with GitHub. Pick the project, enter the PostHog project ID and region, and paste a PostHog personal API key with only the **Query Read** scope (PostHog → Settings → Personal API keys). The key goes from your browser to Seerstack, never through an agent. The import runs in the background; its page shows progress until it's done, and `list_imports` reports it too.
 
-- It imports pageviews and the site's own events, not PostHog's automatic ones (`$autocapture`, `$pageleave`, …). Pass `events` to choose.
-- It stops where Seerstack started recording the site itself, so nothing is counted twice. Pass `date_from`/`date_to` to choose.
-- Imported events look like the tracker recorded them: visitors counted per day (pass `visitor_ids: "persistent"` for sites with `data-persist`), referrers credited the same way, and location and device filled in. They have `lib = 'posthog'`.
+- It imports pageviews and the site's own events, not PostHog's automatic ones (`$autocapture`, `$pageleave`, …). "More options" picks events, dates or a self-hosted PostHog.
+- It stops where Seerstack started recording the site itself, so nothing is counted twice.
+- Imported events look like the tracker recorded them: visitors counted per day (or across days, for sites with `data-persist`), referrers credited the same way, and location and device filled in. They have `lib = 'posthog'`.
 - Running it again carries on where the last import stopped, and an event is never written twice.
-- The key is only used for the import. You can delete it in PostHog once it's done.
+- The key is only used for the import: it travels encrypted and is gone a day after the import finishes. Delete it in PostHog once it's done.
 
 ## Deploying from scratch
 

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { breakdown, DIMENSIONS, funnel, listEvents, overview, projectActivity, timeseries } from "./analytics";
 import type { Env } from "./env";
 import { QueryError } from "./errors";
-import { cancelImport, listImports, startPosthogImport } from "./imports";
+import { cancelImport, listImports } from "./imports";
 import { defaultInterval, INTERVALS, PERIODS, resolveRange } from "./periods";
 import { createProject, getProject, listProjects, type Project, rotateKeys, updateProject } from "./projects";
 import { COLUMNS, EXAMPLES, NOTES } from "./schema-info";
@@ -18,7 +18,7 @@ const INSTRUCTIONS = `Seerstack holds web and product analytics for all of this 
 - Use overview, timeseries, breakdown, list_events and funnel for common questions. They take a period (default 7d) or date_from/date_to, and exact-match filters.
 - For anything else, call get_schema, then run_sql with ClickHouse SQL against the single events table (always filter on project_id and timestamp).
 - Answer "why" questions by comparing periods and breaking down by referrer_domain, utm_*, path, country, browser, os and device.
-- To bring over history from PostHog, call import_posthog. It runs in the background; check it with list_imports.
+- To bring over history from PostHog, call import_posthog for a link to the import page (the user pastes their PostHog key there, not to you), then follow it with list_imports.
 All times are UTC.`;
 
 function ok(data: unknown): CallToolResult {
@@ -187,39 +187,17 @@ export function buildMcpServer(env: Env, origin: string): McpServer {
     {
       title: "Import from PostHog",
       description:
-        "Copy a project's past events from PostHog into Seerstack, as if Seerstack's tracker had recorded them: same visitor counting, referrers, locations and devices. Starts a background import and returns at once with an estimate; follow it with list_imports. By default it imports pageviews and custom events (not PostHog's automatic ones) up to when Seerstack started recording the project's pageviews itself, so nothing is counted twice. Running it again carries on after the last imported event. Needs a PostHog personal API key with the Query Read scope; the key is only used for this import.",
-      inputSchema: {
-        project: projectArg,
-        posthog_project_id: z
-          .string()
-          .describe("PostHog's numeric project ID, from https://us.posthog.com/project/<id>"),
-        posthog_api_key: z.string().min(1).describe("PostHog personal API key (phx_…) with the Query Read scope"),
-        posthog_host: z.string().optional().describe('"us" (default), "eu", or the URL of a self-hosted PostHog'),
-        date_from: z.string().optional().describe("Import from this day, YYYY-MM-DD. Default: PostHog's first event."),
-        date_to: z
-          .string()
-          .optional()
-          .describe("Import up to and including this day, YYYY-MM-DD. Default: when Seerstack's own tracking began."),
-        events: z
-          .array(z.string().min(1).max(200))
-          .max(100)
-          .optional()
-          .describe("Only these event names. Default: $pageview and every event not starting with $."),
-        visitor_ids: z
-          .enum(["daily", "persistent"])
-          .optional()
-          .describe(
-            "How to count visitors, matching the site's script tag: daily (default, cookieless) or persistent (tags with data-persist).",
-          ),
-      },
-      annotations: { ...writes, openWorldHint: true },
+        "Get the link to Seerstack's PostHog import page. There the owner signs in with GitHub, picks the project and pastes a PostHog personal API key, so the key goes from their browser to Seerstack and never through you: don't ask for it. The import then copies the project's past events from PostHog as if Seerstack's tracker had recorded them (same visitor counting, referrers, locations and devices), in the background, up to when Seerstack started recording the project itself. Follow it with list_imports.",
+      inputSchema: { project: z.string().optional().describe("Preselect this project on the page") },
+      annotations: readOnly,
     },
     (args) =>
       run(async () => {
-        const started = await startPosthogImport(env, await projectId(args.project), args);
-        return started.status === "running"
-          ? { import: started, next: "The import runs in the background. Check its progress with list_imports." }
-          : { import: started };
+        const project = args.project === undefined ? undefined : await projectId(args.project);
+        return {
+          url: `${origin}/import${project ? `?project=${encodeURIComponent(project)}` : ""}`,
+          next: "Give the user this link. They'll need a PostHog personal API key with the Query Read scope (PostHog → Settings → Personal API keys). Then check progress with list_imports.",
+        };
       }),
   );
 

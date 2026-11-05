@@ -3,9 +3,11 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { type AuthProps, githubCallback, SCOPE, showConsent, submitConsent } from "./auth";
 import type { Env } from "./env";
+import { showImport, showImportForm, submitCancel, submitImport } from "./import-page";
 import { handleMcp } from "./mcp";
 import { BadRequest, extractEvents, normalizeEvents } from "./normalize";
 import { originAllowed, projectByPublicKey, projectBySecretKey } from "./projects";
+import { CALLBACK_PATH, finishSignIn } from "./sign-in";
 import { appendEvents } from "./tinybird";
 import { TRACKER_JS } from "./tracker";
 
@@ -95,6 +97,13 @@ app.post("/e", async (c) => {
 app.get("/authorize", (c) => showConsent(c.req.raw, c.env));
 app.post("/authorize", (c) => submitConsent(c.req.raw, c.env));
 app.get("/callback", (c) => githubCallback(c.req.raw, c.env));
+
+// The PostHog import page, for the owner only (src/import-page.ts).
+app.get(CALLBACK_PATH, (c) => finishSignIn(c.req.raw, c.env));
+app.get("/import", (c) => showImportForm(c.req.raw, c.env));
+app.post("/import", (c) => submitImport(c.req.raw, c.env));
+app.get("/import/:id", (c) => showImport(c.req.raw, c.env, c.req.param("id")));
+app.post("/import/:id/cancel", (c) => submitCancel(c.req.raw, c.env, c.req.param("id")));
 
 app.onError((err, c) => {
   console.error(err);

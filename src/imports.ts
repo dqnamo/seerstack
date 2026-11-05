@@ -325,7 +325,8 @@ VALUES (?, ?, 'posthog', ?, 'running', ?, ?, ?, ?, ?, ?, ?)`,
     untilMs,
   };
   try {
-    await env.IMPORTS.create({ id, params });
+    // Finished instances (and the sealed key in their params) are deleted after a day.
+    await env.IMPORTS.create({ id, params, retention: { successRetention: "1 day", errorRetention: "1 day" } });
   } catch (error) {
     await finishImport(env.DB, id, "failed", `Couldn't start the import: ${String(error)}`);
     throw error;
@@ -340,10 +341,13 @@ async function reconcile(env: Env, row: Row): Promise<Row> {
   let state: InstanceStatus;
   try {
     state = await (await env.IMPORTS.get(row.id)).status();
-  } catch {
-    return row;
+  } catch (error) {
+    // Instances are only deleted a day after they finish, so a missing one
+    // isn't running any more.
+    if (!/not.?found/i.test(String(error))) return row;
+    state = { status: "unknown", error: { name: "NotFound", message: "The import stopped without reporting back" } };
   }
-  if (state.status === "errored" || state.status === "terminated") {
+  if (state.status === "errored" || state.status === "terminated" || state.error?.name === "NotFound") {
     await finishImport(env.DB, row.id, "failed", state.error?.message ?? `The import stopped (${state.status})`);
   } else if (state.status === "complete") {
     await finishImport(env.DB, row.id, "completed");
@@ -360,6 +364,11 @@ export async function listImports(env: Env, projectId?: string): Promise<ImportS
         .all<Row>()
     : await env.DB.prepare("SELECT * FROM imports ORDER BY created_at DESC LIMIT 20").all<Row>();
   return Promise.all(results.map(async (row) => toSummary(await reconcile(env, row))));
+}
+
+export async function getImport(env: Env, id: string): Promise<ImportSummary | null> {
+  const row = await getImportRow(env.DB, id);
+  return row ? toSummary(await reconcile(env, row)) : null;
 }
 
 export async function cancelImport(env: Env, id: string): Promise<ImportSummary> {
