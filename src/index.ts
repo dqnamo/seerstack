@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { type AuthProps, githubCallback, SCOPE, showConsent, submitConsent } from "./auth";
 import type { Env } from "./env";
-import { HOME_HTML } from "./home";
+import { homeHtml } from "./home";
 import { handleMcp } from "./mcp";
 import { BadRequest, extractEvents, normalizeEvents } from "./normalize";
 import { originAllowed, projectByPublicKey, projectBySecretKey } from "./projects";
@@ -15,7 +15,7 @@ const PUBLIC_URL = "https://seerstack.com";
 
 export const app = new Hono<{ Bindings: Env }>();
 
-app.get("/", (c) => c.html(HOME_HTML));
+app.get("/", (c) => c.html(homeHtml(c.env.HOMEPAGE_KEY)));
 app.get("/favicon.svg", (c) =>
   c.body('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><circle cx="16" cy="16" r="8"/></svg>', 200, {
     "content-type": "image/svg+xml",

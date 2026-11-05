@@ -18,7 +18,7 @@ flowchart LR
 
 `src/index.ts` exports an `OAuthProvider`. Requests to `/mcp` with a valid token go to `mcpHandler`. The provider itself answers `/token`, `/register` and the `/.well-known/oauth-*` discovery documents. Everything else goes to the Hono app.
 
-- `GET /`: the homepage (`src/home.ts`), one static HTML string with inline CSS and no JavaScript. Grays come from `@radix-ui/colors` (light and dark via `light-dark()`); brand logos are inline SVGs in `src/logos.ts`. Fonts load from Google Fonts.
+- `GET /`: the homepage (`src/home.ts`), one HTML string with inline CSS. Its only JavaScript is the tracker: when `HOMEPAGE_KEY` is set, the page loads `/s.js` with that key, so Seerstack tracks its own homepage as the `seerstack` project (cookieless, no `data-persist`). Grays come from `@radix-ui/colors` (light and dark via `light-dark()`); brand logos are inline SVGs in `src/logos.ts`. Fonts load from Google Fonts.
 - `GET /s.js`: the tracker (`src/tracker.ts`). It sends pageviews on load and on `pushState`/`popstate`, and exposes `window.seerstack.track/identify`. It reads the public key from `data-key`. By default it stores nothing; with `data-persist` it keeps a random visitor ID in localStorage and sends it as `anonymous_id` (ADR 0008).
 - `POST /e`: ingest. Takes one event, or `{ batch: [...] }` up to 500.
   - A bearer header means a server event: the key is resolved as a secret key.
@@ -52,7 +52,7 @@ flowchart LR
 
 - `wrangler.jsonc`:
   - Bindings: `DB` (D1 `seerstack`) and `OAUTH_KV`.
-  - Vars: `TINYBIRD_HOST`, `GITHUB_CLIENT_ID`, `ALLOWED_GITHUB_USER_ID`.
+  - Vars: `TINYBIRD_HOST`, `GITHUB_CLIENT_ID`, `ALLOWED_GITHUB_USER_ID`, `HOMEPAGE_KEY`.
   - Custom domain: `seerstack.com`.
 - Secrets: `TINYBIRD_INGEST_TOKEN`, `TINYBIRD_READ_TOKEN`, `ANON_SALT`, `GITHUB_CLIENT_SECRET`.
 - Production:

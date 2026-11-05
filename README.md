@@ -82,7 +82,7 @@ pnpm exec wrangler d1 create seerstack
 pnpm exec wrangler kv namespace create OAUTH_KV
 ```
 
-Put the D1 and KV IDs, your Tinybird region, the GitHub app's client ID and your GitHub user ID (`gh api user --jq .id`) into `wrangler.jsonc`, along with your domain in `routes` and in `PUBLIC_URL` in `src/index.ts`. Then set the secrets. The two Tinybird tokens are the full values of `seerstack_ingest` and `seerstack_read`, and `ANON_SALT` is any long random string.
+Put the D1 and KV IDs, your Tinybird region, the GitHub app's client ID and your GitHub user ID (`gh api user --jq .id`) into `wrangler.jsonc`, along with your domain in `routes` and in `PUBLIC_URL` in `src/index.ts`. Set `HOMEPAGE_KEY` to `""` for now. Once Seerstack is running, you can create a project for your domain and put its public key there to track your homepage. Then set the secrets. The two Tinybird tokens are the full values of `seerstack_ingest` and `seerstack_read`, and `ANON_SALT` is any long random string.
 
 ```bash
 pnpm exec wrangler secret put TINYBIRD_INGEST_TOKEN

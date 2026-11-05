@@ -18,7 +18,9 @@
     // The GitHub OAuth App used to sign in on /authorize (callback: https://seerstack.com/callback).
     "GITHUB_CLIENT_ID": "Ov23li2HBDH0iCb2FJS2",
     // Only this GitHub account can connect MCP clients (`gh api user --jq .id`).
-    "ALLOWED_GITHUB_USER_ID": "25507937"
+    "ALLOWED_GITHUB_USER_ID": "25507937",
+    // The homepage tracks itself with this public key (the "seerstack" project). Leave empty to not track it.
+    "HOMEPAGE_KEY": "pk_fa2e4dc38caa35591f0790c9b43546c6"
   }
   // Secrets (`wrangler secret put <NAME>`):
   //   TINYBIRD_INGEST_TOKEN  full value of the seerstack_ingest token

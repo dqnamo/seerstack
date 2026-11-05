@@ -19,4 +19,6 @@ export type Env = {
   GITHUB_CLIENT_SECRET: string;
   /** The only GitHub account (numeric user ID) allowed to authorize MCP clients. */
   ALLOWED_GITHUB_USER_ID: string;
+  /** Public key of the project that tracks the homepage. Unset or empty: no tracking. */
+  HOMEPAGE_KEY?: string;
 };
